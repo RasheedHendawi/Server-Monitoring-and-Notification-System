@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "Task2_AnomalyDetection": {
+      "commandName": "Project"
+    },
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": ""
+    }
+  }
+}
