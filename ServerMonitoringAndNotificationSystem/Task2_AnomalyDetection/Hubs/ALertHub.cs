@@ -7,6 +7,7 @@ namespace Task2_AnomalyDetection.Hubs
         public async Task SendAlert(string message)
         {
             await Clients.All.SendAsync("ReceiveAlert", message);
+            //Console.WriteLine($"Rasheed.{message}");
         }
     }
 }

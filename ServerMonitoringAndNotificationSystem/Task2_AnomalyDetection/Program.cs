@@ -1,5 +1,6 @@
 ﻿using Task2_AnomalyDetection.Hubs;
 using Task2_AnomalyDetection.Services;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,29 +60,40 @@ var mongoService = app.Services.GetRequiredService<MongoDBService>();
 var subscriber = app.Services.GetRequiredService<MessageQueueSubscriber>();
 var anomalyDetector = app.Services.GetRequiredService<AnomalyDetector>();
 var signalRPublisher = app.Services.GetRequiredService<SignalRPublisher>();
-
+bool flagTesting = false;
 subscriber.Subscribe("ServerStatistics.*", async stats =>
 {
-    await mongoService.InsertAsync(stats);
-
-    var recentStats = await mongoService.GetRecentAsync(stats.ServerIdentifier, 2);
-
-    if (recentStats.Count > 1)
+    try
     {
-        var previous = recentStats[1];
-
-        if (anomalyDetector.IsMemoryAnomaly(stats.MemoryUsage, previous.MemoryUsage) ||
-            anomalyDetector.IsCpuAnomaly(stats.CpuUsage, previous.CpuUsage))
+        await mongoService.InsertAsync(stats);
+        if (!flagTesting)
         {
-            await signalRPublisher.SendAlert($"Anomaly detected: {stats.ServerIdentifier}");
+            await signalRPublisher.SendAlert($"High usage detected: Rasheed.Testing");
+            flagTesting = true;
         }
-
-        if (anomalyDetector.IsMemoryHighUsage(stats.MemoryUsage, stats.AvailableMemory) ||
-            anomalyDetector.IsCpuHighUsage(stats.CpuUsage))
+        var recentStats = await mongoService.GetRecentAsync(stats.ServerIdentifier, 2);
+        if (recentStats.Count > 1)
         {
-            await signalRPublisher.SendAlert($"High usage detected: {stats.ServerIdentifier}");
+            var previous = recentStats[1];
+
+            if (anomalyDetector.IsMemoryAnomaly(stats.MemoryUsage, previous.MemoryUsage) ||
+                anomalyDetector.IsCpuAnomaly(stats.CpuUsage, previous.CpuUsage))
+            {
+                await signalRPublisher.SendAlert($"Anomaly detected: {stats.ServerIdentifier}");
+            }
+
+            if (anomalyDetector.IsMemoryHighUsage(stats.MemoryUsage, stats.AvailableMemory) ||
+                anomalyDetector.IsCpuHighUsage(stats.CpuUsage))
+            {
+                await signalRPublisher.SendAlert($"High usage detected: {stats.ServerIdentifier}");
+            }
         }
     }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error in subscriber: {ex.Message}");
+    }
 });
+
 
 app.Run();
