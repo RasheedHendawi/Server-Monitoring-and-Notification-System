@@ -43,7 +43,6 @@ namespace Task2_AnomalyDetection.Services
             channel.BasicConsume(queue: queueName, autoAck: true, consumer: consumer);
 
             Console.WriteLine($"Subscribed to topic: {topic}");
-            //Console.ReadLine();
         }
     }
 }
